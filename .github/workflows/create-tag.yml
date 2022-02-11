@@ -1,0 +1,45 @@
+name: create-new-tag
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  create-latest-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Get the version from the version file
+        run: |
+            version_file=$(find . -name version.py | grep -v site-packages | grep -v build | head -1)
+            export CURRENT_VERSION=$(cat $version_file | grep VERSION | head -1 | sed "s/.*VERSION.*=.*[\'\"]\(.*\)[\'\"].*/\1/")
+            echo "current_version=$CURRENT_VERSION" >> $GITHUB_ENV
+            echo "current_tag=v$CURRENT_VERSION" >> $GITHUB_ENV
+
+      - name: Check for tag existence
+        uses: mukunku/tag-exists-action@v1.0.0
+        id: checkTag
+        with:
+          tag: ${{env.current_tag}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
+      - name: Print Existence of tag 
+        run: |
+          echo Existence of tag ${{env.current_tag}}
+          echo ${{ steps.checkTag.outputs.exists }}
+
+      - name: git credentials setup
+        uses: fusion-engineering/setup-git-credentials@v2
+        with:
+          credentials: ${{ secrets.GH_WORKFLOW_CREDENTIALS }}
+
+      - name: Push a tag
+        uses: richardsimko/update-tag@master
+        with:
+          tag_name: ${{env.current_tag}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}

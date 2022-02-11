@@ -1,0 +1,39 @@
+name: bump-versions-check
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, reopened, synchronize]
+
+jobs:
+  bump-version-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Get the version from the version file
+        run: |
+          version_file=$(find . -name version.py | grep -v site-packages | grep -v build | head -1)
+          export CURRENT_VERSION=$(cat $version_file | grep VERSION | head -1 | sed "s/.*VERSION.*=.*[\'\"]\(.*\)[\'\"].*/\1/")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_ENV
+          echo "current_tag=v$CURRENT_VERSION" >> $GITHUB_ENV
+
+      - name: Check for tag existence
+        uses: mukunku/tag-exists-action@v1.0.0
+        id: checkTag
+        with:
+          tag: ${{env.current_tag}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
+
+      - name: Bump version in the appropriate files
+        run: |
+          if [  "${{ steps.checkTag.outputs.exists }}" != "true" ]; then
+            echo Tag ${{env.current_tag}} not found. The current version is a new version.
+          else
+            echo The version ${{env.current_version}} in this repo already has a tag ${{env.current_tag}} for it. 
+            echo Please bump the version.
+            exit 1
+          fi
