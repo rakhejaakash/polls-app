@@ -11,7 +11,6 @@ jobs:
     strategy:
       matrix:
         python-version: [3.7]
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
@@ -27,7 +26,6 @@ jobs:
           export CURRENT_VERSION=$(cat $version_file | grep VERSION | head -1 | sed "s/.*VERSION.*=.*[\'\"]\(.*\)[\'\"].*/\1/")
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_ENV
           echo "current_tag=v$CURRENT_VERSION" >> $GITHUB_ENV
-
       - name: Check for tag existence
         uses: mukunku/tag-exists-action@v1.0.0
         id: checkTag
