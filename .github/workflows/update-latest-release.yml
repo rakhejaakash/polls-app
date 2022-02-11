@@ -1,0 +1,30 @@
+name: update-latest-release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  run:
+    name: "Creates a tagged release"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Get the version from the version file
+          run: |
+            version_file=$(find . -name version.txt | grep -v site-packages | grep -v build | head -1)
+            export CURRENT_VERSION=$(cat $version_file | grep VERSION | head -1 | sed "s/.*VERSION.*=.*[\'\"]\(.*\)[\'\"].*/\1/")
+            echo "current_version=$CURRENT_VERSION" >> $GITHUB_ENV
+            echo "current_tag=v$CURRENT_VERSION" >> $GITHUB_ENV
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            *.zip
+            *.tar.gz
